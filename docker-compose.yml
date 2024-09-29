@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/city_car_management
+    volumes:
+      - .:/app
+    command: >
+      sh -c "chmod +x /app/wait-for-it.sh && /app/wait-for-it.sh db:5432 -- poetry run flask db upgrade && poetry run flask run --host=0.0.0.0"
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: city_car_management
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  test:
+    build: .
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/city_car_management
+    volumes:
+      - .:/app
+    command: >
+      sh -c "chmod +x /app/wait-for-it.sh && /app/wait-for-it.sh db:5432 -- poetry run pytest"
+
+volumes:
+  pgdata: {}
